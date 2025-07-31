@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 
-const openRouterApiKey = 'bearer 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'; // starts with org-...
+
+const openRouterApiKey = ''; // starts with org-...
 
 class DietPage extends StatefulWidget {
   final String goal;
