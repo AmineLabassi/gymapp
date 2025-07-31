@@ -20,7 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> updateInfo() async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.3:5000/profile'),
+      Uri.parse('http://192.168.1.4:5000/profile'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
@@ -28,7 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
         'height': double.tryParse(heightController.text) ?? 0.0,
         'weight': double.tryParse(weightController.text) ?? 0.0,
         'age': int.tryParse(ageController.text) ?? 0,
-        'gender': '', // optionnel
+        'gender': '', 
       }),
     );
 
@@ -39,7 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> changePassword() async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.3:5000/change-password'),
+      Uri.parse('http://192.168.1.4:5000/change-password'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
@@ -54,7 +54,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> deleteAccount() async {
     final response = await http.delete(
-      Uri.parse('http://192.168.1.3:5000/delete/${widget.username}'),
+      Uri.parse('http://192.168.1.4:5000/delete/${widget.username}'),
     );
 
     ScaffoldMessenger.of(context).showSnackBar(

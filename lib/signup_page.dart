@@ -28,7 +28,7 @@ class _SignupPageState extends State<SignupPage> {
     final base64Image = 'data:image/jpeg;base64,' + base64Encode(bytes);
 
     final faceResponse = await http.post(
-      Uri.parse('http://192.168.1.3:5000/upload-face'),
+      Uri.parse('http://192.168.1.4:5000/upload-face'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'face_image': base64Image}),
     );
@@ -40,7 +40,7 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> register(BuildContext context) async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.3:5000/register'),
+      Uri.parse('http://192.168.1.4:5000/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': usernameController.text,

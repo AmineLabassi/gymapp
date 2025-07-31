@@ -10,7 +10,7 @@ class LoginPage extends StatelessWidget {
 
   Future<void> login(BuildContext context) async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.3:5000/login'),
+      Uri.parse('http://192.168.1.4:5000/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': usernameController.text,
@@ -22,7 +22,7 @@ class LoginPage extends StatelessWidget {
 
     if (response.statusCode == 200) {
       final userResponse = await http.get(
-        Uri.parse('http://192.168.1.3:5000/user/${usernameController.text}'),
+        Uri.parse('http://192.168.1.4:5000/user/${usernameController.text}'),
       );
 
       if (userResponse.statusCode == 200) {
@@ -58,7 +58,7 @@ class LoginPage extends StatelessWidget {
     final base64Image = 'data:image/jpeg;base64,' + base64Encode(bytes);
 
     final response = await http.post(
-      Uri.parse('http://192.168.1.3:5000/verify-face'),
+      Uri.parse('http://192.168.1.4:5000/verify-face'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': usernameController.text,
@@ -69,7 +69,7 @@ class LoginPage extends StatelessWidget {
     final result = jsonDecode(response.body);
     if (response.statusCode == 200) {
       final userResponse = await http.get(
-        Uri.parse('http://192.168.1.3:5000/user/${usernameController.text}'),
+        Uri.parse('http://192.168.1.4:5000/user/${usernameController.text}'),
       );
 
       if (userResponse.statusCode == 200) {
