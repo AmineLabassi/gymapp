@@ -5,7 +5,9 @@ import face_recognition
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import joblib
+import pandas as pd
+import re
 app = Flask(__name__)
 CORS(app)
 
@@ -207,6 +209,118 @@ def verify_face():
         return jsonify({'message': 'Face match'}), 200
     else:
         return jsonify({'message': 'Face does not match'}), 401
+
+# ==== Chargement des modèles et encodeurs ====
+model_bf = joblib.load('models/breakfast_model.pkl')
+model_ln = joblib.load('models/lunch_model.pkl')
+model_dn = joblib.load('models/dinner_model.pkl')
+
+enc_bf = joblib.load('models/breakfast_encoder.pkl')
+enc_ln = joblib.load('models/lunch_encoder.pkl')
+enc_dn = joblib.load('models/dinner_encoder.pkl')
+
+import re
+
+@app.route('/diet', methods=['POST'])
+def generate_diet():
+    data = request.get_json()
+    username = data.get('username')
+    calories = data.get('calories_to_maintain_weight')
+
+    if not username or not calories:
+        return jsonify({'error': 'Username and calories are required'}), 400
+
+    # Get user data
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT age, weight, height, gender FROM users WHERE username = ?', (username,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if not result:
+        return jsonify({'error': 'User not found'}), 404
+
+    age, weight, height, gender = result
+
+    df = pd.DataFrame([{
+        "age": age,
+        "weight(kg)": weight,
+        "height(m)": height,
+        "gender": gender,
+        "calories_to_maintain_weight": calories
+    }])
+    df["gender"] = df["gender"].map({
+        "male": "M", "female": "F",
+        "Male": "M", "Female": "F",
+        "M": "M", "F": "F"
+    }).fillna("M")
+
+    # Default balanced meals
+    default_bf = "60g of oats + 150g of banana + 150ml of milk"
+    default_ln = "200g of rice + 130g of chicken + 300g of vegetables"
+    default_dn = "180g of pasta + 130g of tuna + 300g of vegetables"
+
+    try:
+        # Predict meals
+        pred_bf = model_bf.predict(df)[0]
+        pred_ln = model_ln.predict(df)[0]
+        pred_dn = model_dn.predict(df)[0]
+
+        # Ensure valid labels
+        breakfast = pred_bf if pred_bf in enc_bf.classes_ else default_bf
+        lunch = pred_ln if pred_ln in enc_ln.classes_ else default_ln
+        dinner = pred_dn if pred_dn in enc_dn.classes_ else default_dn
+
+        # Use estimation to validate prediction quality
+        def estimate_calories(meal_text):
+            food_calories = {
+                "oats": 389,
+                "banana": 89,
+                "milk": 42,
+                "rice": 130,
+                "chicken": 165,
+                "vegetables": 35,
+                "tuna": 132,
+                "pasta": 131,
+                "whole wheat bread": 250,
+                "egg": 155,
+                "plain yogurt": 59,
+                "vegetable soup": 40
+            }
+            import re
+            total = 0
+            for food, kcal_per_100 in food_calories.items():
+                match = re.search(rf"(\d+)\s*(g|ml)?\s*(of|de)?\s*{food}", meal_text, re.IGNORECASE)
+                if match:
+                    qty = int(match.group(1))
+                    total += (qty / 100) * kcal_per_100
+            return total
+
+        # Total calorie estimation
+        total_cal = (
+            estimate_calories(breakfast) +
+            estimate_calories(lunch) +
+            estimate_calories(dinner)
+        )
+
+        # If too far from target, fallback to balanced default meals
+        if abs(total_cal - calories) > 250:  # tolerance range
+            breakfast = default_bf
+            lunch = default_ln
+            dinner = default_dn
+
+        return jsonify({
+            "breakfast": breakfast,
+            "lunch": lunch,
+            "dinner": dinner,
+            "calories": round(calories)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 # ========== START SERVER ==========
 
