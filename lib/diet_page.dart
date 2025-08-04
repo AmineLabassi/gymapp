@@ -2,71 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
-
-const openRouterApiKey = ''; // starts with org-...
-
 class DietPage extends StatefulWidget {
-  final String goal;
-  final int calories;
+  final String username;
+  final double calories;
 
-  const DietPage({required this.goal, required this.calories});
+  const DietPage({required this.username, required this.calories});
 
   @override
   State<DietPage> createState() => _DietPageState();
 }
 
 class _DietPageState extends State<DietPage> {
-  String? dietPlan;
+  Map<String, dynamic>? dietData;
   bool loading = true;
+  String? error;
 
   @override
   void initState() {
     super.initState();
-    fetchDietPlan(widget.goal, widget.calories).then((plan) {
+    fetchDietFromBackend(widget.username, widget.calories).then((data) {
       setState(() {
-        dietPlan = plan;
+        dietData = data;
         loading = false;
       });
-    }).catchError((error) {
+    }).catchError((err) {
       setState(() {
-        dietPlan = 'Error generating diet plan: $error';
+        error = err.toString();
         loading = false;
       });
     });
   }
 
-  Future<String> fetchDietPlan(String goal, int calories) async {
-    final prompt = '''
-Create a complete daily diet plan for a person with the goal "$goal" and a calorie target of $calories kcal.
-Include breakfast, lunch, dinner, and 2 snacks.
-List meals with ingredients and estimated calories per meal.
-Keep it simple and practical.dont write  sure... just give only the answer and write This is your personalized diet plan with $calories
-''';
+  Future<Map<String, dynamic>> fetchDietFromBackend(String username, double calories) async {
+    final url = Uri.parse('http://192.168.1.4:5000/diet'); // or your public server address
 
     final response = await http.post(
-      Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
-      headers: {
-        'Authorization': openRouterApiKey,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://yourappname.com', 
-        'X-Title': 'gym',        
-      },
+      url,
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "model": "openai/gpt-3.5-turbo",
-        "messages": [
-          {"role": "system", "content": "You are a certified nutritionist."},
-          {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 700,
+        "username": username,
+        "calories_to_maintain_weight": calories.round()
       }),
     );
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['choices'][0]['message']['content'];
+      return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to generate diet plan: ${response.body}');
+      throw Exception('Failed to load diet plan: ${response.body}');
     }
   }
 
@@ -82,12 +64,51 @@ Keep it simple and practical.dont write  sure... just give only the answer and w
         padding: const EdgeInsets.all(24.0),
         child: loading
             ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                child: Text(
-                  dietPlan ?? 'No plan generated.',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
+            : error != null
+                ? Text(
+                    error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  )
+                : dietData == null
+                    ? const Text('No data received.')
+                    : SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Calories target: ${dietData!["calories"]} kcal',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildMealSection("🍳 Breakfast", dietData!["breakfast"]),
+                            _buildMealSection("🍛 Lunch", dietData!["lunch"]),
+                            _buildMealSection("🍝 Dinner", dietData!["dinner"]),
+                          ],
+                        ),
+                      ),
+      ),
+    );
+  }
+
+  Widget _buildMealSection(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+        ],
       ),
     );
   }
