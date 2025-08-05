@@ -31,6 +31,44 @@ def init_db():
 
 init_db()
 
+def init_gym_db():
+    conn = sqlite3.connect('gym.db')
+    cursor = conn.cursor()
+
+    # Create goals table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE
+        )
+    ''')
+
+    # Create days table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS days (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            goal_id INTEGER,
+            name TEXT,
+            FOREIGN KEY(goal_id) REFERENCES goals(id)
+        )
+    ''')
+
+    # Create exercises table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS exercises (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            day_id INTEGER,
+            name TEXT,
+            reps TEXT,
+            video_url TEXT,
+            FOREIGN KEY(day_id) REFERENCES days(id)
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+
 # ========== AUTH ROUTES ==========
 
 @app.route('/register', methods=['POST'])
@@ -321,8 +359,160 @@ def generate_diet():
 
 
 
+gainMuscleProgram = [
+    {'day': 'Monday - Push', 'exercises': [
+        {'name': 'Barbell Bench Press', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=gRVjAtPip0Y'},
+        {'name': 'Overhead Press', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=qEwKCR5JCog'},
+        {'name': 'Dumbbell Chest Fly', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=eozdVDA78K0'},
+        {'name': 'Triceps Extension', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=nRiJVZDpdL0'}
+    ]},
+    {'day': 'Tuesday - Pull', 'exercises': [
+        {'name': 'Seated Row', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=GZbfZ033f74'},
+        {'name': 'Assisted Pull-ups', 'reps': '3x8', 'videoUrl': 'https://www.youtube.com/watch?v=0ZkivYwS5zM'},
+        {'name': 'Bicep Curls', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=ykJmrZ5v0Oo'}
+    ]},
+    {'day': 'Wednesday - Legs', 'exercises': [
+        {'name': 'Barbell Squats', 'reps': '4x12', 'videoUrl': 'https://www.youtube.com/watch?v=Dy28eq2PjcM'},
+        {'name': 'Walking Lunges', 'reps': '3x10', 'videoUrl': 'https://www.youtube.com/watch?v=wrwwXE_x-pQ'},
+        {'name': 'Romanian Deadlift', 'reps': '3x10', 'videoUrl': 'https://www.youtube.com/watch?v=2SHsk9AzdjA'},
+        {'name': 'Calf Raises', 'reps': '3x20', 'videoUrl': 'https://www.youtube.com/watch?v=-M4-G8p8fmc'}
+    ]},
+    {'day': 'Thursday', 'exercises': []},
+    {'day': 'Friday - Push', 'exercises': [
+        {'name': 'Incline Dumbbell Press', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=8iPEnn-ltC8'},
+        {'name': 'Dips', 'reps': '3x8', 'videoUrl': 'https://www.youtube.com/watch?v=2z8JmcrW-As'},
+        {'name': 'Lateral Raises', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=kDqklk1ZESo'}
+    ]},
+    {'day': 'Saturday - Pull', 'exercises': [
+        {'name': 'Barbell Row', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=vT2GjY_Umpw'},
+        {'name': 'Face Pulls', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=rep-qVOkqgk'},
+        {'name': 'Hammer Curls', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=zC3nLlEvin4'}
+    ]},
+    {'day': 'Sunday - Legs/Optional', 'exercises': [
+        {'name': 'Leg Press', 'reps': '4x10', 'videoUrl': 'https://www.youtube.com/watch?v=IZxyjW7MPJQ'},
+        {'name': 'Leg Curl Machine', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=1Tq3QdYUuHs'}
+    ]}
+]
+
+loseWeightProgram = [
+    {'day': 'Monday - Push', 'exercises': [
+        {'name': 'Push-ups', 'reps': '4x20', 'videoUrl': 'https://www.youtube.com/watch?v=IODxDxX7oi4'},
+        {'name': 'Bench Dips', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=0326dy_-CzM'},
+        {'name': 'Dumbbell Shoulder Press', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=B-aVuyhvLHU'}
+    ]},
+    {'day': 'Tuesday - Pull', 'exercises': [
+        {'name': 'Cable Row', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=HJSVR_67OlM'},
+        {'name': 'Bicep Curls', 'reps': '3x20', 'videoUrl': 'https://www.youtube.com/watch?v=ykJmrZ5v0Oo'},
+        {'name': 'Plank', 'reps': '3x1 min', 'videoUrl': 'https://www.youtube.com/watch?v=pSHjTRCQxIw'}
+    ]},
+    {'day': 'Wednesday - Legs', 'exercises': [
+        {'name': 'Bodyweight Squats', 'reps': '4x20', 'videoUrl': 'https://www.youtube.com/watch?v=aclHkVaku9U'},
+        {'name': 'Walking Lunges', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=wrwwXE_x-pQ'},
+        {'name': 'Jump Squats', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=U4s4mEQ5VqU'}
+    ]},
+    {'day': 'Thursday', 'exercises': []},
+    {'day': 'Friday - Push', 'exercises': [
+        {'name': 'Incline Push-ups', 'reps': '4x20', 'videoUrl': 'https://www.youtube.com/watch?v=EDG7Yg6tzKY'},
+        {'name': 'Lateral Raises', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=kDqklk1ZESo'},
+        {'name': 'Triceps Dips', 'reps': '3x12', 'videoUrl': 'https://www.youtube.com/watch?v=0326dy_-CzM'}
+    ]},
+    {'day': 'Saturday - Pull', 'exercises': [
+        {'name': 'Lat Pulldown', 'reps': '3x15', 'videoUrl': 'https://www.youtube.com/watch?v=CAwf7n6Luuc'},
+        {'name': 'Resistance Band Row', 'reps': '3x20', 'videoUrl': 'https://www.youtube.com/watch?v=sP_4vybjVJs'},
+        {'name': 'Side Plank', 'reps': '3x45 sec', 'videoUrl': 'https://www.youtube.com/watch?v=K2VljzCC16g'}
+    ]},
+    {'day': 'Sunday - Cardio + Stretch', 'exercises': [
+        {'name': 'Light cardio (walk/cycle)', 'reps': '30-40 min', 'videoUrl': 'https://www.youtube.com/watch?v=ml6cT4AZdqI'},
+        {'name': 'Full-body Stretching', 'reps': '15 min', 'videoUrl': 'https://www.youtube.com/watch?v=qULTwquOuT4'}
+    ]}
+]
+def insert_program_to_db(goal_name, program_data):
+
+    conn = sqlite3.connect('gym.db')
+    cursor = conn.cursor()
+
+    cursor.execute('INSERT OR IGNORE INTO goals (name) VALUES (?)', (goal_name,))
+    goal_id = cursor.execute('SELECT id FROM goals WHERE name = ?', (goal_name,)).fetchone()[0]
+
+    for day in program_data:
+        cursor.execute('INSERT INTO days (goal_id, name) VALUES (?, ?)', (goal_id, day['day']))
+        day_id = cursor.lastrowid
+
+        for ex in day['exercises']:
+            cursor.execute('INSERT INTO exercises (day_id, name, reps, video_url) VALUES (?, ?, ?, ?)',
+                           (day_id, ex['name'], ex['reps'], ex['videoUrl']))
+    
+    conn.commit()
+    conn.close()
+
+@app.route('/gym', methods=['GET'])
+def get_all_programs():
+    conn = sqlite3.connect('gym.db')
+    cursor = conn.cursor()
+
+    # Enable dictionary cursor
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # Fetch all goals
+    cursor.execute("SELECT id, name FROM goals")
+    goals = cursor.fetchall()
+
+    all_programs = []
+
+    for goal in goals:
+        goal_id = goal['id']
+        goal_name = goal['name']
+
+        # Fetch days for this goal
+        cursor.execute("""
+            SELECT id, name FROM days
+            WHERE goal_id = ?
+            ORDER BY id ASC
+        """, (goal_id,))
+        days = cursor.fetchall()
+
+        program = []
+        for day in days:
+            day_id = day['id']
+            day_name = day['name']
+
+            # Fetch exercises for this day
+            cursor.execute("""
+                SELECT name, reps, video_url FROM exercises
+                WHERE day_id = ?
+            """, (day_id,))
+            exercises_raw = cursor.fetchall()
+
+            exercises = [
+                {
+                    "name": ex['name'],
+                    "reps": ex['reps'],
+                    "videoUrl": ex['video_url']
+                }
+                for ex in exercises_raw
+            ]
+
+            program.append({
+                "day": day_name,
+                "exercises": exercises
+            })
+
+        all_programs.append({
+            "goal": goal_name,
+            "program": program
+        })
+
+    conn.close()
+    return jsonify(all_programs)
+
+
 
 # ========== START SERVER ==========
 
 if __name__ == '__main__':
+    init_gym_db()
+
+    insert_program_to_db("gain muscle", gainMuscleProgram)
+    insert_program_to_db("lose weight", loseWeightProgram)
     app.run(host='0.0.0.0', port=5000, debug=True)
