@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'providers/app_state.dart';
 
 class GymProgramPage extends StatefulWidget {
-  final String goal;
-
-  const GymProgramPage({required this.goal});
+  const GymProgramPage({super.key});
 
   @override
   State<GymProgramPage> createState() => _GymProgramPageState();
@@ -24,14 +24,17 @@ class _GymProgramPageState extends State<GymProgramPage> {
 
   Future<void> fetchProgram() async {
     try {
-      final url = Uri.parse('http://192.168.1.4:5000/gym'); 
+      final appState = Provider.of<AppState>(context, listen: false);
+      final goal = appState.goal?.toLowerCase() ?? 'maintain';
+
+      final url = Uri.parse('http://192.168.245.59:5000/gym');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
         final selected = data.firstWhere(
-          (p) => p['goal'].toLowerCase() == widget.goal.toLowerCase(),
+          (p) => p['goal'].toLowerCase() == goal,
           orElse: () => {'program': []},
         );
 
@@ -55,13 +58,13 @@ class _GymProgramPageState extends State<GymProgramPage> {
     return Scaffold(
       backgroundColor: Colors.blue.shade900,
       appBar: AppBar(
-        title: Text('Gym Programme'),
+        title: const Text('Gym Programme'),
         backgroundColor: Colors.blue.shade800,
       ),
       body: loading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: ListView.builder(
                 itemCount: program.length,
                 itemBuilder: (context, index) {
@@ -73,20 +76,20 @@ class _GymProgramPageState extends State<GymProgramPage> {
                     children: [
                       Text(
                         day['day'],
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.lightBlueAccent,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       exercises.isEmpty
-                          ? Text(
+                          ? const Text(
                               'Rest Day',
                               style: TextStyle(color: Colors.white70),
                             )
                           : Table(
-                              columnWidths: {
+                              columnWidths: const {
                                 0: FlexColumnWidth(3),
                                 1: FlexColumnWidth(1),
                               },
@@ -95,13 +98,13 @@ class _GymProgramPageState extends State<GymProgramPage> {
                                     (ex) => TableRow(
                                       children: [
                                         Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 ex['name'],
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 16,
                                                 ),
@@ -109,7 +112,7 @@ class _GymProgramPageState extends State<GymProgramPage> {
                                               if (ex['videoUrl'] != null && ex['videoUrl'].toString().isNotEmpty)
                                                 GestureDetector(
                                                   onTap: () => _launchUrl(Uri.parse(ex['videoUrl'])),
-                                                  child: Text(
+                                                  child: const Text(
                                                     '▶ Watch Video',
                                                     style: TextStyle(
                                                       color: Colors.lightBlueAccent,
@@ -122,10 +125,10 @@ class _GymProgramPageState extends State<GymProgramPage> {
                                           ),
                                         ),
                                         Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Text(
                                             ex['reps'],
-                                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                                            style: const TextStyle(color: Colors.white70, fontSize: 16),
                                           ),
                                         ),
                                       ],
@@ -133,7 +136,7 @@ class _GymProgramPageState extends State<GymProgramPage> {
                                   )
                                   .toList(),
                             ),
-                      Divider(color: Colors.white24, height: 30),
+                      const Divider(color: Colors.white24, height: 30),
                     ],
                   );
                 },

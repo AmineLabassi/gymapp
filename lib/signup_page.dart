@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'providers/app_state.dart';
 
-class SignupPage extends StatefulWidget {
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
+
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
@@ -28,28 +32,36 @@ class _SignupPageState extends State<SignupPage> {
     final base64Image = 'data:image/jpeg;base64,' + base64Encode(bytes);
 
     final faceResponse = await http.post(
-      Uri.parse('http://192.168.1.4:5000/upload-face'),
+      Uri.parse('http://192.168.245.59:5000/upload-face'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'face_image': base64Image}),
     );
 
     final result = jsonDecode(faceResponse.body);
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(result['message'])));
+        .showSnackBar(SnackBar(content: Text(result['message'] ?? 'Face uploaded')));
   }
 
   Future<void> register(BuildContext context) async {
+    final username = usernameController.text.trim();
+    final password = passwordController.text;
+    final gender = selectedGender.toLowerCase();
+    final goal = selectedGoal;
+    final height = double.tryParse(heightController.text) ?? 0.0;
+    final weight = double.tryParse(weightController.text) ?? 0.0;
+    final age = int.tryParse(ageController.text) ?? 0;
+
     final response = await http.post(
-      Uri.parse('http://192.168.1.4:5000/register'),
+      Uri.parse('http://192.168.245.59:5000/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'username': usernameController.text,
-        'password': passwordController.text,
-        'gender': selectedGender.toLowerCase(),
-        'goal': selectedGoal,
-        'height': double.tryParse(heightController.text) ?? 0.0,
-        'weight': double.tryParse(weightController.text) ?? 0.0,
-        'age': int.tryParse(ageController.text) ?? 0,
+        'username': username,
+        'password': password,
+        'gender': gender,
+        'goal': goal,
+        'height': height,
+        'weight': weight,
+        'age': age,
       }),
     );
 
@@ -58,7 +70,17 @@ class _SignupPageState extends State<SignupPage> {
         .showSnackBar(SnackBar(content: Text(result['message'])));
 
     if (response.statusCode == 201) {
-      Navigator.pop(context);
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.setUser(username);
+      appState.setGoalAndCalories(goal, 0); // calories can be recalculated
+      appState.setUserDetails(
+        gender: gender,
+        height: height,
+        weight: weight,
+        age: age,
+      );
+
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -67,7 +89,7 @@ class _SignupPageState extends State<SignupPage> {
       hintText: label,
       filled: true,
       fillColor: Colors.blue.shade800,
-      hintStyle: TextStyle(color: Colors.white54),
+      hintStyle: const TextStyle(color: Colors.white54),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
@@ -80,32 +102,32 @@ class _SignupPageState extends State<SignupPage> {
     return Scaffold(
       backgroundColor: Colors.blue.shade900,
       appBar: AppBar(
-        title: Text('Create Account'),
+        title: const Text('Create Account'),
         backgroundColor: Colors.blue.shade800,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: usernameController,
               decoration: _inputStyle('Username'),
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: passwordController,
               decoration: _inputStyle('Password'),
               obscureText: true,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             DropdownButtonFormField<String>(
               value: selectedGender,
               dropdownColor: Colors.blue.shade800,
               decoration: _inputStyle('Gender'),
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
               items: ['Male', 'Female'].map((gender) {
                 return DropdownMenuItem(
                   value: gender,
@@ -118,33 +140,33 @@ class _SignupPageState extends State<SignupPage> {
                 });
               },
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: heightController,
               decoration: _inputStyle('Height (cm)'),
               keyboardType: TextInputType.number,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: weightController,
               decoration: _inputStyle('Weight (kg)'),
               keyboardType: TextInputType.number,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
               controller: ageController,
               decoration: _inputStyle('Age'),
               keyboardType: TextInputType.number,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             DropdownButtonFormField<String>(
               value: selectedGoal,
               dropdownColor: Colors.blue.shade800,
               decoration: _inputStyle('Goal'),
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
               items: ['Lose weight', 'Gain muscle'].map((goal) {
                 return DropdownMenuItem(
                   value: goal,
@@ -157,28 +179,27 @@ class _SignupPageState extends State<SignupPage> {
                 });
               },
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () => register(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.lightBlueAccent,
-                padding: EdgeInsets.symmetric(horizontal: 60, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
               ),
-              child:
-                  Text("Sign up", style: TextStyle(color: Colors.black, fontSize: 16)),
+              child: const Text("Sign up", style: TextStyle(color: Colors.black, fontSize: 16)),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             ElevatedButton.icon(
               onPressed: () =>
                   captureAndUploadFace(usernameController.text.trim()),
-              icon: Icon(Icons.camera_alt),
-              label: Text("Scan Face"),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Scan Face"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white10,
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),

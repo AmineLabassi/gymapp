@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
-import 'settings_page.dart';
+import 'package:provider/provider.dart';
+import 'providers/app_state.dart';
 import 'gym_program_page.dart';
-import 'diet_page.dart'; 
 
 class HomePage extends StatefulWidget {
-  final String username;
-  final String gender;
-  final double weight;
-  final double height;
-  final int age;
-  final String goal;
-
-  HomePage({
-    required this.username,
-    required this.gender,
-    required this.weight,
-    required this.height,
-    required this.age,
-    required this.goal,
-  });
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,73 +13,78 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  double calculateCalories() {
-    final gender = widget.gender.toLowerCase();
-    final goal = widget.goal.toLowerCase();
+  double calculateCalories({
+    required String gender,
+    required double weight,
+    required double height,
+    required int age,
+    required String goal,
+  }) {
     double bmr;
 
-    if (gender == 'female') {
-      bmr = 447.6 + (9.2 * widget.weight) + (3.1 * widget.height) - (4.3 * widget.age);
+    if (gender.toLowerCase() == 'female') {
+      bmr = 447.6 + (9.2 * weight) + (3.1 * height) - (4.3 * age);
     } else {
-      bmr = 88.36 + (13.4 * widget.weight) + (4.8 * widget.height) - (5.7 * widget.age);
+      bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age);
     }
 
-    if (goal == 'lose weight') {
+    if (goal.toLowerCase() == 'lose weight') {
       return bmr * 0.85;
-    } else if (goal == 'gain muscle') {
+    } else if (goal.toLowerCase() == 'gain muscle') {
       return bmr * 1.15;
     }
 
     return bmr;
   }
 
-  void _onItemTapped(int index) {
-    if (_selectedIndex == index) return;
+ void _onItemTapped(int index, AppState appState) {
+  if (_selectedIndex == index) return;
 
-    setState(() {
-      _selectedIndex = index;
-    });
+  setState(() {
+    _selectedIndex = index;
+  });
 
-    switch (index) {
-      case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GymProgramPage(goal: widget.goal),
-          ),
-        );
-        break;
-      case 2:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DietPage(
-              goal: widget.goal,
-              calories: calculateCalories().round(),
-            ),
-          ),
-        );
-        break;
-      case 3:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SettingsPage(username: widget.username),
-          ),
-        );
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-        break;
-    }
+  switch (index) {
+    case 1:
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const GymProgramPage(),
+        ),
+      );
+      break;
+    case 2:
+      Navigator.pushNamed(context, '/diet');
+      break;
+    case 3:
+      Navigator.pushNamed(context, '/settings');
+      break;
+    case 4:
+      appState.logout();
+      Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+      break;
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    final calories = calculateCalories().round();
+    final appState = Provider.of<AppState>(context);
+
+    final username = appState.username ?? 'User';
+    final gender = appState.gender ?? 'male';
+    final weight = appState.weight ?? 70;
+    final height = appState.height ?? 170;
+    final age = appState.age ?? 25;
+    final goal = appState.goal ?? 'maintain';
+
+    final calories = calculateCalories(
+      gender: gender,
+      weight: weight,
+      height: height,
+      age: age,
+      goal: goal,
+    ).round();
 
     return Scaffold(
       backgroundColor: Colors.blue.shade900,
@@ -111,7 +101,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Welcome, ${widget.username}!",
+                  "Welcome, $username!",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -143,7 +133,7 @@ class _HomePageState extends State<HomePage> {
         selectedItemColor: Colors.lightBlueAccent,
         unselectedItemColor: Colors.white70,
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        onTap: (index) => _onItemTapped(index, appState),
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
